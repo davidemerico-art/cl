@@ -1,65 +1,104 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { useStore } from "./StoreProvider";
+import { Scissors, ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function Home() {
+  const { products } = useStore();
+  
+  // Filtriamo solo i tagli ("cut") per la Home
+  const cuts = products.filter(p => p.type === "cut").slice(0, 3); // Mostriamo max 3 in home
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col min-h-screen">
+      
+      {/* HERO SECTION */}
+      <section className="relative w-full h-[70vh] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="/imagine negozio.png" 
+            alt="Salone Sfondo" 
+            fill
+            className="object-cover opacity-30 object-center"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
+          <div className="w-24 h-24 mb-6 rounded-full overflow-hidden border-2 border-primary shadow-[0_0_20px_rgba(212,175,55,0.4)]">
+            <Image 
+              src="/imagine negozio.png" 
+              alt="Icona Salone" 
+              width={96}
+              height={96}
+              className="object-cover"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-extrabold text-foreground mb-4 drop-shadow-xl tracking-tight">
+            Il Tuo Stile. <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-hover">La Nostra Arte.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl font-light">
+            Entra in una dimensione dove eleganza e professionalità si incontrano. 
+            Scopri i nostri ultimi tagli, acquista i migliori prodotti e prenota il tuo momento di relax.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/calendar" className="px-8 py-4 bg-primary text-background font-bold rounded-lg hover:bg-primary-hover transition-all duration-300 shadow-lg shadow-primary/20 flex items-center gap-2">
+              <Scissors size={20} /> Prenota Ora
+            </Link>
+            <Link href="/shop" className="px-8 py-4 bg-secondary text-foreground font-bold rounded-lg border border-border hover:border-primary transition-all duration-300 flex items-center gap-2">
+              <ShoppingBag size={20} /> Entra nello Shop
+            </Link>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* RECENT WORK SECTION */}
+      <section className="py-20 px-4 max-w-7xl mx-auto w-full">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/50 inline-block mb-2">Ultimi Lavori</h2>
+            <p className="text-foreground/60">I tagli e le sfumature più richieste del momento.</p>
+          </div>
+          <Link href="/shop" className="text-primary hover:text-white transition-colors flex items-center gap-1 font-medium group">
+            Vedi tutti <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+
+        {cuts.length === 0 ? (
+          <div className="text-center py-10 bg-card rounded-2xl border border-border">
+            <p className="text-foreground/50">Ancora nessun lavoro caricato. L'admin posterà presto nuovi stili!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {cuts.map(cut => (
+              <div key={cut.id} className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/50 transition-colors">
+                <div className="relative h-64 w-full overflow-hidden">
+                  <img 
+                    src={cut.image} 
+                    alt={cut.name} 
+                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
+                </div>
+                <div className="p-6 relative">
+                  <div className="absolute -top-6 right-6 bg-primary text-background font-bold px-4 py-2 rounded-full shadow-lg">
+                    €{cut.price}
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 text-white">{cut.name}</h3>
+                  <p className="text-foreground/70 text-sm line-clamp-2">{cut.description}</p>
+                  <Link href={`/shop`} className="mt-4 inline-flex text-primary text-sm font-semibold hover:underline">
+                    Richiedi questo stile
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
     </div>
   );
 }
