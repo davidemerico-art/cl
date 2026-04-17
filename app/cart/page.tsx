@@ -25,7 +25,7 @@ export default function CartPage() {
     text += `\n*Totale: €${total.toFixed(2)}*\n\nResto in attesa di conferma!`;
     
     const encodedText = encodeURIComponent(text);
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedText}`, "_blank");
+    window.open(`https://api.whatsapp.com/send/?phone=39324907366&text=${encodedText}`, "_blank");
   };
 
   if (!mounted) return null;

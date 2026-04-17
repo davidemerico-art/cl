@@ -35,6 +35,7 @@ type StoreContextType = {
   isAdmin: boolean;
   loginAdmin: (code1: string, code2: string) => boolean;
   logoutAdmin: () => void;
+  updateAdminCodes: (newCode1: string, newCode2: string) => void;
 
   products: Product[];
   addProduct: (product: Omit<Product, "id">) => void;
@@ -52,6 +53,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Pre-load state from LocalStorage if available, otherwise defaults
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCode1, setAdminCode1] = useState("lorenzo");
+  const [adminCode2, setAdminCode2] = useState("davide");
   const [products, setProducts] = useState<Product[]>([]);
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -60,11 +63,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Load from local storage
     const storedCart = localStorage.getItem("salon_cart");
     const storedAdmin = localStorage.getItem("salon_isAdmin");
+    const storedCode1 = localStorage.getItem("salon_adminCode1");
+    const storedCode2 = localStorage.getItem("salon_adminCode2");
     const storedProducts = localStorage.getItem("salon_products");
     const storedSlots = localStorage.getItem("salon_slots");
 
     if (storedCart) setCart(JSON.parse(storedCart));
     if (storedAdmin === "true") setIsAdmin(true);
+    if (storedCode1) setAdminCode1(storedCode1);
+    if (storedCode2) setAdminCode2(storedCode2);
     
     if (storedProducts) {
       setProducts(JSON.parse(storedProducts));
@@ -93,12 +100,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Save to local storage on change
   useEffect(() => {if(isLoaded) localStorage.setItem("salon_cart", JSON.stringify(cart))}, [cart, isLoaded]);
   useEffect(() => {if(isLoaded) localStorage.setItem("salon_isAdmin", isAdmin ? "true" : "false")}, [isAdmin, isLoaded]);
+  useEffect(() => {if(isLoaded) localStorage.setItem("salon_adminCode1", adminCode1)}, [adminCode1, isLoaded]);
+  useEffect(() => {if(isLoaded) localStorage.setItem("salon_adminCode2", adminCode2)}, [adminCode2, isLoaded]);
   useEffect(() => {if(isLoaded) localStorage.setItem("salon_products", JSON.stringify(products))}, [products, isLoaded]);
   useEffect(() => {if(isLoaded) localStorage.setItem("salon_slots", JSON.stringify(slots))}, [slots, isLoaded]);
 
   const loginAdmin = (code1: string, code2: string) => {
-    // Harcoded come richiesto
-    if (code1 === "ADMIN1" && code2 === "ADMIN2") {
+    // Check against current codes
+    if (code1 === adminCode1 && code2 === adminCode2) {
       setIsAdmin(true);
       return true;
     }
@@ -106,6 +115,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const logoutAdmin = () => setIsAdmin(false);
+
+  const updateAdminCodes = (newCode1: string, newCode2: string) => {
+    setAdminCode1(newCode1);
+    setAdminCode2(newCode2);
+  };
 
   const addToCart = (product: Product) => {
     setCart(prev => {

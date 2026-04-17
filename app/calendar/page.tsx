@@ -17,9 +17,8 @@ export default function CalendarPage() {
   });
 
   const handleBooking = (date: string, time: string) => {
-    const phoneNumber = "39324907366";
     const text = `Ciao! Vorrei prenotare un appuntamento per il giorno ${date} alle ore ${time}. Esiste ancora disponibilità?`;
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://api.whatsapp.com/send/?phone=39324907366&text=${encodeURIComponent(text)}`, "_blank");
   };
 
   if (!mounted) return null;

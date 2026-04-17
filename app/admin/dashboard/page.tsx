@@ -3,12 +3,12 @@
 import { useStore, Product, CalendarSlot } from "@/app/StoreProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store } from "lucide-react";
+import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store, Settings } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { isAdmin, logoutAdmin, products, addProduct, deleteProduct, slots, addSlot, toggleSlotAvailability, deleteSlot } = useStore();
+  const { isAdmin, logoutAdmin, products, addProduct, deleteProduct, slots, addSlot, toggleSlotAvailability, deleteSlot, updateAdminCodes } = useStore();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"cuts" | "shop" | "calendar">("cuts");
+  const [activeTab, setActiveTab] = useState<"cuts" | "shop" | "calendar" | "settings">("cuts");
 
   useEffect(() => {
     if (!isAdmin) {
@@ -43,12 +43,16 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab("calendar")} className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold min-w-fit transition-colors ${activeTab === "calendar" ? "bg-primary text-background" : "bg-card border border-border text-foreground/70 hover:text-white"}`}>
           <CalIcon size={20} /> Calendario
         </button>
+        <button onClick={() => setActiveTab("settings")} className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold min-w-fit transition-colors ${activeTab === "settings" ? "bg-primary text-background" : "bg-card border border-border text-foreground/70 hover:text-white"}`}>
+          <Settings size={20} /> Impostazioni
+        </button>
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-6 md:p-8 flex-1">
         {activeTab === "cuts" && <ProductManager type="cut" items={products} onAdd={addProduct} onDelete={deleteProduct} />}
         {activeTab === "shop" && <ProductManager type="product" items={products} onAdd={addProduct} onDelete={deleteProduct} />}
         {activeTab === "calendar" && <CalendarManager slots={slots} onAdd={addSlot} onToggle={toggleSlotAvailability} onDelete={deleteSlot} />}
+        {activeTab === "settings" && <SettingsManager onUpdateCodes={updateAdminCodes} />}
       </div>
     </div>
   );
@@ -181,6 +185,49 @@ function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: Calendar
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Composant per gestire le impostazioni admin (cambio password)
+function SettingsManager({ onUpdateCodes }: { onUpdateCodes: (new1: string, new2: string) => void }) {
+  const [code1, setCode1] = useState("");
+  const [code2, setCode2] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateCodes(code1, code2);
+    setSaved(true);
+    setCode1("");
+    setCode2("");
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div className="max-w-md mx-auto bg-background p-8 rounded-xl border border-border">
+      <h3 className="font-bold text-2xl mb-2 text-white">Codici di Accesso</h3>
+      <p className="text-sm text-foreground/60 mb-6">Aggiorna le due password per entrare nel pannello di controllo.</p>
+      
+      {saved && (
+        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg text-sm font-medium">
+          Codici aggiornati con successo!
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 1</label>
+          <input required type="text" value={code1} onChange={e=>setCode1(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
+        </div>
+        <div>
+          <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 2</label>
+          <input required type="text" value={code2} onChange={e=>setCode2(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
+        </div>
+        <button type="submit" className="w-full bg-primary text-background font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-primary-hover mt-4">
+          Salva Nuovi Codici
+        </button>
+      </form>
     </div>
   );
 }

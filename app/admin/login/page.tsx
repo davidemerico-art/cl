@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/app/StoreProvider";
 import { useRouter } from "next/navigation";
 import { ShieldAlert, KeyRound } from "lucide-react";
@@ -8,16 +8,19 @@ import { ShieldAlert, KeyRound } from "lucide-react";
 export default function AdminLoginPage() {
   const { loginAdmin, isAdmin } = useStore();
   const router = useRouter();
-  
+
   const [code1, setCode1] = useState("");
   const [code2, setCode2] = useState("");
   const [error, setError] = useState(false);
 
-  // If already admin, redirect
-  if (isAdmin) {
-    router.push("/admin/dashboard");
-    return null;
-  }
+  // If already admin, redirect safely using useEffect
+  useEffect(() => {
+    if (isAdmin) {
+      router.push("/admin/dashboard");
+    }
+  }, [isAdmin, router]);
+
+  if (isAdmin) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +36,7 @@ export default function AdminLoginPage() {
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="bg-card w-full max-w-md p-8 rounded-2xl border border-border shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-primary"></div>
-        
+
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4">
             <ShieldAlert size={32} />
@@ -50,10 +53,10 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground/70 mb-1">padrone</label>
+            <label className="block text-sm font-medium text-foreground/70 mb-1">Codice 1</label>
             <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
-              <input 
+              <input
                 type="password"
                 value={code1}
                 onChange={e => setCode1(e.target.value)}
@@ -64,10 +67,10 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/70 mb-1">toria</label>
+            <label className="block text-sm font-medium text-foreground/70 mb-1">Codice 2</label>
             <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
-              <input 
+              <input
                 type="password"
                 value={code2}
                 onChange={e => setCode2(e.target.value)}
@@ -77,7 +80,7 @@ export default function AdminLoginPage() {
               />
             </div>
           </div>
-          <button 
+          <button
             type="submit"
             className="w-full bg-gradient-to-r from-red-600 to-primary hover:from-red-500 hover:to-primary-hover text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-red-500/20 mt-4"
           >
