@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Salone Parrucchiere Premium",
+  title: "LC Hair Boutique",
   description: "Prenotazioni, Shop Prodotti e Tagli",
 };
 
@@ -37,7 +37,7 @@ export default function RootLayout({
           <footer className="w-full bg-secondary border-t border-border mt-auto py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="text-sm text-foreground/70">
-                © 2026 Salon Lounge. Tutti i diritti riservati.
+                © 2026 LC Hair Boutique. Tutti i diritti riservati.
               </div>
               <div className="flex gap-4">
                 <a href="/admin/login" className="text-xs text-foreground/40 hover:text-primary transition-colors">Area Riservata (Admin)</a>

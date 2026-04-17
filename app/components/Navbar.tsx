@@ -22,7 +22,7 @@ export default function Navbar() {
               height={40} 
               className="rounded-full shadow-lg shadow-primary/20 group-hover:shadow-primary/50 transition-all duration-300"
             />
-            <span className="font-bold text-xl tracking-wider text-foreground group-hover:text-primary transition-colors">SALON LOUNGE</span>
+            <span className="font-bold text-xl tracking-wider text-foreground group-hover:text-primary transition-colors">LC HAIR BOUTIQUE</span>
           </Link>
 
           <div className="flex items-center space-x-6">

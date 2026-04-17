@@ -189,45 +189,118 @@ function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: Calendar
   );
 }
 
-// Composant per gestire le impostazioni admin (cambio password)
+// Composant per gestire le impostazioni admin (cambio password con OTP simulato)
 function SettingsManager({ onUpdateCodes }: { onUpdateCodes: (new1: string, new2: string) => void }) {
+  const [step, setStep] = useState<"phone" | "otp" | "change">("phone");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  
   const [code1, setCode1] = useState("");
   const [code2, setCode2] = useState("");
   const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simulazione controllo che sia il numero autorizzato del proprietario
+    if (phone.includes("3249070366")) {
+      setErrorMsg("");
+      setStep("otp");
+    } else {
+      setErrorMsg("Numero non autorizzato. Inserisci il numero corretto del proprietario.");
+    }
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp === "1234") {
+      setErrorMsg("");
+      setStep("change");
+    } else {
+      setErrorMsg("Codice OTP errato. Riprova.");
+    }
+  };
+
+  const handlePassSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateCodes(code1, code2);
     setSaved(true);
     setCode1("");
     setCode2("");
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => {
+      setSaved(false);
+      setStep("phone");
+      setPhone("");
+      setOtp("");
+    }, 3000);
   };
 
   return (
     <div className="max-w-md mx-auto bg-background p-8 rounded-xl border border-border">
-      <h3 className="font-bold text-2xl mb-2 text-white">Codici di Accesso</h3>
-      <p className="text-sm text-foreground/60 mb-6">Aggiorna le due password per entrare nel pannello di controllo.</p>
+      <h3 className="font-bold text-2xl mb-2 text-white">Sicurezza Account</h3>
       
-      {saved && (
-        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg text-sm font-medium">
-          Codici aggiornati con successo!
+      {errorMsg && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg text-sm font-medium">
+          {errorMsg}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 1</label>
-          <input required type="text" value={code1} onChange={e=>setCode1(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
-        </div>
-        <div>
-          <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 2</label>
-          <input required type="text" value={code2} onChange={e=>setCode2(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
-        </div>
-        <button type="submit" className="w-full bg-primary text-background font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-primary-hover mt-4">
-          Salva Nuovi Codici
-        </button>
-      </form>
+      {step === "phone" && (
+        <>
+          <p className="text-sm text-foreground/60 mb-6">Per cambiare i codici di accesso, dobbiamo prima verificare la tua identità. Inserisci il tuo numero di telefono.</p>
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1 text-foreground/70">Numero di telefono Proprietario</label>
+              <input required type="text" placeholder="+39 324..." value={phone} onChange={e=>setPhone(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
+            </div>
+            <button type="submit" className="w-full bg-primary text-background font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-primary-hover mt-4">
+              Richiedi OTP su WhatsApp
+            </button>
+          </form>
+        </>
+      )}
+
+      {step === "otp" && (
+        <>
+           <p className="text-sm text-foreground/60 mb-2">Abbiamo inviato un messaggio WhatsApp di sicurezza al tuo numero.</p>
+           <p className="text-xs text-primary mb-6">Nota (versione prototipo senza server): Usa il codice standard <b>1234</b>.</p>
+           
+           <form onSubmit={handleOtpSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1 text-foreground/70">Pin Sicurezza a 4 cifre</label>
+              <input required type="text" maxLength={4} placeholder="E.g. 1234" value={otp} onChange={e=>setOtp(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white tracking-widest text-center text-xl font-mono" />
+            </div>
+            <button type="submit" className="w-full bg-primary text-background font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-primary-hover mt-4">
+              Verifica
+            </button>
+          </form>
+        </>
+      )}
+
+      {step === "change" && (
+        <>
+          <p className="text-sm text-green-400 mb-6">Identità confermata! Puoi impostare i nuovi codici.</p>
+          {saved && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg text-sm font-medium">
+              Codici aggiornati con successo!
+            </div>
+          )}
+
+          <form onSubmit={handlePassSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 1</label>
+              <input required type="text" value={code1} onChange={e=>setCode1(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
+            </div>
+            <div>
+              <label className="block text-sm mb-1 text-foreground/70">Nuovo Codice 2</label>
+              <input required type="text" value={code2} onChange={e=>setCode2(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-white" />
+            </div>
+            <button type="submit" className="w-full bg-green-500 text-white font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-green-600 mt-4 shadow-lg shadow-green-500/20">
+              Salva e Blocca
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 }
