@@ -57,7 +57,7 @@ export default function CalendarPage() {
               >
                 <option value="" disabled className="bg-card text-foreground">-- Seleziona il Servizio --</option>
                 {cuts.map(cut => (
-                  <option key={cut.id} value={cut.id} className="bg-card text-white">{cut.name} (€{cut.price.toFixed(2)})</option>
+                  <option key={cut.id} value={cut.id} className="bg-card text-white">{cut.name} (€{(cut.price ?? 0).toFixed(2)})</option>
                 ))}
               </select>
             </div>

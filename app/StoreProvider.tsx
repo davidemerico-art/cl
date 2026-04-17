@@ -50,7 +50,6 @@ type StoreContextType = {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  // Pre-load state from LocalStorage if available, otherwise defaults
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCode1, setAdminCode1] = useState("lorenzo");
@@ -59,54 +58,60 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Inizializzazione dati da Database e LocalStorage (per il carrello)
   useEffect(() => {
-    // Load from local storage
-    const storedCart = localStorage.getItem("salon_cart");
-    const storedAdmin = localStorage.getItem("salon_isAdmin");
-    const storedCode1 = localStorage.getItem("salon_adminCode1");
-    const storedCode2 = localStorage.getItem("salon_adminCode2");
-    const storedProducts = localStorage.getItem("salon_products");
-    const storedSlots = localStorage.getItem("salon_slots");
+    const fetchData = async () => {
+      try {
+        // Fetch prodotti
+        const resProd = await fetch("/api/products");
+        const dataProd = await resProd.json();
+        if (Array.isArray(dataProd)) {
+          setProducts(dataProd.map((p: any) => ({ ...p, price: Number(p.price || 0) })));
+        }
 
-    if (storedCart) setCart(JSON.parse(storedCart));
-    if (storedAdmin === "true") setIsAdmin(true);
-    if (storedCode1) setAdminCode1(storedCode1);
-    if (storedCode2) setAdminCode2(storedCode2);
-    
-    if (storedProducts) {
-      setProducts(JSON.parse(storedProducts));
-    } else {
-      // Dummy data se non ci sono dati
-      setProducts([
-        { id: "1", name: "Taglio Sfumato", description: "Sfumatura a pelle e styling macchinetta", price: 20, image: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&q=80&h=300", type: "cut" },
-        { id: "2", name: "Cera Opaca Premium", description: "Tenuta forte effetto naturale", price: 15, image: "https://images.unsplash.com/photo-1626897505254-e0f811aa9bf7?auto=format&fit=crop&q=80&h=300", type: "product" }
-      ]);
-    }
+        // Fetch slot calendario
+        const resSlots = await fetch("/api/slots");
+        const dataSlots = await resSlots.json();
+        if (Array.isArray(dataSlots)) setSlots(dataSlots);
 
-    if (storedSlots) {
-      setSlots(JSON.parse(storedSlots));
-    } else {
-      // Dummy slots
-      setSlots([
-        { id: "1", date: "2026-04-20", time: "10:00", isAvailable: true },
-        { id: "2", date: "2026-04-20", time: "11:00", isAvailable: false },
-        { id: "3", date: "2026-04-20", time: "16:00", isAvailable: true }
-      ]);
-    }
-    
-    setIsLoaded(true);
+        // Fetch impostazioni admin
+        const resSettings = await fetch("/api/settings");
+        const dataSettings = await resSettings.json();
+        if (dataSettings.code1) setAdminCode1(dataSettings.code1);
+        if (dataSettings.code2) setAdminCode2(dataSettings.code2);
+
+        // Carrello rimane su LocalStorage (sessione utente)
+        const storedCart = localStorage.getItem("salon_cart");
+        if (storedCart) {
+          const parsedCart = JSON.parse(storedCart);
+          if (Array.isArray(parsedCart)) {
+            setCart(parsedCart.map((item: any) => ({ ...item, price: Number(item.price || 0) })));
+          }
+        }
+
+        // Stato Admin (se era già loggato in questa sessione)
+        const storedAdmin = localStorage.getItem("salon_isAdmin");
+        if (storedAdmin === "true") setIsAdmin(true);
+
+        setIsLoaded(true);
+      } catch (err) {
+        console.error("Errore caricamento dati iniziali:", err);
+        setIsLoaded(true);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  // Save to local storage on change
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_cart", JSON.stringify(cart))}, [cart, isLoaded]);
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_isAdmin", isAdmin ? "true" : "false")}, [isAdmin, isLoaded]);
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_adminCode1", adminCode1)}, [adminCode1, isLoaded]);
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_adminCode2", adminCode2)}, [adminCode2, isLoaded]);
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_products", JSON.stringify(products))}, [products, isLoaded]);
-  useEffect(() => {if(isLoaded) localStorage.setItem("salon_slots", JSON.stringify(slots))}, [slots, isLoaded]);
+  // Sync Cart to local storage
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("salon_cart", JSON.stringify(cart));
+      localStorage.setItem("salon_isAdmin", isAdmin ? "true" : "false");
+    }
+  }, [cart, isAdmin, isLoaded]);
 
   const loginAdmin = (code1: string, code2: string) => {
-    // Check against current codes
     if (code1 === adminCode1 && code2 === adminCode2) {
       setIsAdmin(true);
       return true;
@@ -116,9 +121,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logoutAdmin = () => setIsAdmin(false);
 
-  const updateAdminCodes = (newCode1: string, newCode2: string) => {
-    setAdminCode1(newCode1);
-    setAdminCode2(newCode2);
+  const updateAdminCodes = async (newCode1: string, newCode2: string) => {
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        body: JSON.stringify({ code1: newCode1, code2: newCode2 })
+      });
+      setAdminCode1(newCode1);
+      setAdminCode2(newCode2);
+    } catch (err) {
+      console.error("Errore update codici:", err);
+    }
   };
 
   const addToCart = (product: Product) => {
@@ -134,23 +147,72 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
   const clearCart = () => setCart([]);
 
-  const addProduct = (product: Omit<Product, "id">) => {
-    setProducts(prev => [{ ...product, id: Date.now().toString() }, ...prev]);
+  const addProduct = async (productData: Omit<Product, "id">) => {
+    const newProduct = { ...productData, id: Date.now().toString() };
+    try {
+      await fetch("/api/products", {
+        method: "POST",
+        body: JSON.stringify(newProduct)
+      });
+      setProducts(prev => [newProduct, ...prev]);
+    } catch (err) {
+      console.error("Errore aggiunta prodotto:", err);
+    }
   };
-  const deleteProduct = (id: string) => setProducts(prev => prev.filter(p => p.id !== id));
 
-  const addSlot = (date: string, time: string) => {
-    setSlots(prev => [...prev, { id: Date.now().toString(), date, time, isAvailable: true }]);
+  const deleteProduct = async (id: string) => {
+    try {
+      await fetch("/api/products", {
+        method: "DELETE",
+        body: JSON.stringify({ id })
+      });
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error("Errore delete prodotto:", err);
+    }
   };
-  const toggleSlotAvailability = (id: string) => {
-    setSlots(prev => prev.map(s => s.id === id ? { ...s, isAvailable: !s.isAvailable } : s));
+
+  const addSlot = async (date: string, time: string) => {
+    const newSlot = { id: Date.now().toString(), date, time, isAvailable: true };
+    try {
+      await fetch("/api/slots", {
+        method: "POST",
+        body: JSON.stringify(newSlot)
+      });
+      setSlots(prev => [...prev, newSlot]);
+    } catch (err) {
+      console.error("Errore aggiunta slot:", err);
+    }
   };
-  const deleteSlot = (id: string) => setSlots(prev => prev.filter(s => s.id !== id));
+
+  const toggleSlotAvailability = async (id: string) => {
+    try {
+      await fetch("/api/slots", {
+        method: "PATCH",
+        body: JSON.stringify({ id })
+      });
+      setSlots(prev => prev.map(s => s.id === id ? { ...s, isAvailable: !s.isAvailable } : s));
+    } catch (err) {
+      console.error("Errore toggle slot:", err);
+    }
+  };
+
+  const deleteSlot = async (id: string) => {
+    try {
+      await fetch("/api/slots", {
+        method: "DELETE",
+        body: JSON.stringify({ id })
+      });
+      setSlots(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      console.error("Errore delete slot:", err);
+    }
+  };
 
   return (
     <StoreContext.Provider value={{
       cart, addToCart, removeFromCart, clearCart,
-      isAdmin, loginAdmin, logoutAdmin,
+      isAdmin, loginAdmin, logoutAdmin, updateAdminCodes,
       products, addProduct, deleteProduct,
       slots, addSlot, toggleSlotAvailability, deleteSlot
     }}>

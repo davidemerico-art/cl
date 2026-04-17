@@ -66,7 +66,7 @@ export default function ShopPage() {
               <div className="p-5 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-lg text-white leading-tight">{product.name}</h3>
-                  <span className="font-bold text-primary whitespace-nowrap ml-3">€{product.price.toFixed(2)}</span>
+                  <span className="font-bold text-primary whitespace-nowrap ml-3">€{(product.price ?? 0).toFixed(2)}</span>
                 </div>
                 <p className="text-foreground/60 text-sm flex-1">{product.description}</p>
                 

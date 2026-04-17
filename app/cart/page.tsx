@@ -14,7 +14,7 @@ export default function CartPage() {
     setMounted(true);
   }, []);
 
-  const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const total = cart.reduce((acc, item) => acc + ((item.price ?? 0) * item.quantity), 0);
   const hasCut = cart.some(item => item.type === "cut");
   const availableSlots = slots.filter(s => s.isAvailable).sort((a, b) => {
     return new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime();
@@ -25,7 +25,7 @@ export default function CartPage() {
 
     let text = "Ciao! Vorrei ordinare i seguenti articoli dal sito LC Hair Boutique:\n\n";
     cart.forEach(item => {
-      text += `- ${item.quantity}x ${item.name} (€${item.price.toFixed(2)})\n`;
+      text += `- ${item.quantity}x ${item.name} (€${(item.price ?? 0).toFixed(2)})\n`;
     });
 
     if (hasCut && selectedSlotId) {
@@ -76,7 +76,7 @@ export default function CartPage() {
                     <span className="text-sm text-foreground/60 capitalize mt-1">Quantità: {item.quantity}</span>
                   </div>
                   <div className="flex items-center gap-6">
-                    <span className="font-bold text-primary">€{(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-primary">€{((item.price ?? 0) * item.quantity).toFixed(2)}</span>
                     <button 
                       onClick={() => removeFromCart(item.id)}
                       className="text-foreground/40 hover:text-red-500 transition-colors p-2"

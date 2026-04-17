@@ -59,12 +59,26 @@ export default function AdminDashboard() {
 }
 
 // Composant per gestire i prodotti/tagli
+// Componente per gestire i prodotti/tagli
 function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product", items: Product[], onAdd: any, onDelete: any }) {
   const filtered = items.filter(i => i.type === type);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
-  const [image, setImage] = useState("");
+  const [image, setImage] = useState(""); // Questo conterrà l'URL o il Base64 finale
+  const [uploadType, setUploadType] = useState<"url" | "file">("url");
+
+  // Funzione helper per convertire il file in stringa Base64
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string); // Salva il contenuto del file come stringa
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,10 +103,50 @@ function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product
             <label className="block text-sm mb-1 text-foreground/70">Prezzo (€)</label>
             <input required type="number" step="0.01" value={price} onChange={e=>setPrice(e.target.value)} className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-white" />
           </div>
-          <div>
-            <label className="block text-sm mb-1 text-foreground/70">URL Immagine</label>
-            <input required type="url" value={image} onChange={e=>setImage(e.target.value)} placeholder="https://..." className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-white text-sm" />
+
+          {/* Selettore tipo caricamento immagine */}
+          <div className="flex gap-4 p-1 bg-secondary rounded-md border border-border">
+            <button 
+              type="button" 
+              onClick={() => { setUploadType("url"); setImage(""); }}
+              className={`flex-1 py-1 text-xs rounded ${uploadType === "url" ? "bg-primary text-background font-bold" : "text-foreground/60"}`}
+            >
+              URL Web
+            </button>
+            <button 
+              type="button" 
+              onClick={() => { setUploadType("file"); setImage(""); }}
+              className={`flex-1 py-1 text-xs rounded ${uploadType === "file" ? "bg-primary text-background font-bold" : "text-foreground/60"}`}
+            >
+              Carica File
+            </button>
           </div>
+
+          <div>
+            <label className="block text-sm mb-1 text-foreground/70">Immagine</label>
+            {uploadType === "url" ? (
+              <input 
+                required 
+                type="url" 
+                value={image} 
+                onChange={e=>setImage(e.target.value)} 
+                placeholder="https://..." 
+                className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-white text-sm" 
+              />
+            ) : (
+              <div className="space-y-2">
+                <input 
+                  required={!image}
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-foreground/60 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-background hover:file:opacity-80"
+                />
+                {image && <p className="text-[10px] text-green-400">File caricato con successo!</p>}
+              </div>
+            )}
+          </div>
+
           <button type="submit" className="w-full bg-primary text-background font-bold px-4 py-3 rounded-md flex items-center justify-center gap-2 hover:bg-primary-hover">
             <Plus size={18} /> Aggiungi
           </button>
@@ -113,7 +167,7 @@ function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-white leading-tight">{item.name}</h4>
-                    <span className="text-primary font-bold text-sm">€{item.price.toFixed(2)}</span>
+                    <span className="text-primary font-bold text-sm">€{(item.price ?? 0).toFixed(2)}</span>
                   </div>
                 </div>
                 <button onClick={() => onDelete(item.id)} className="mt-auto flex items-center justify-center gap-2 w-full py-2 bg-red-500/10 text-red-500 rounded text-sm hover:bg-red-500/20 font-medium">

@@ -85,7 +85,7 @@ export default function Home() {
                 </div>
                 <div className="p-6 relative">
                   <div className="absolute -top-6 right-6 bg-primary text-background font-bold px-4 py-2 rounded-full shadow-lg">
-                    €{cut.price}
+                    €{(cut.price ?? 0).toFixed(2)}
                   </div>
                   <h3 className="text-xl font-bold mb-2 text-white">{cut.name}</h3>
                   <p className="text-foreground/70 text-sm line-clamp-2">{cut.description}</p>
