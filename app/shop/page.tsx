@@ -3,11 +3,13 @@
 import { useStore, Product } from "@/app/StoreProvider";
 import { ShoppingCart, Plus, Search, X } from "lucide-react";
 import { useState, useMemo } from "react";
+import ProductModal from "@/app/components/ProductModal";
 
 export default function ShopPage() {
   const { products, addToCart } = useStore();
   const [filter, setFilter] = useState<"all" | "product" | "cut">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -88,7 +90,11 @@ export default function ShopPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
-            <div key={product.id} className="bg-card rounded-xl border border-border hover:border-primary/50 transition-all overflow-hidden flex flex-col group">
+            <div 
+              key={product.id} 
+              onClick={() => setSelectedProduct(product)}
+              className="bg-card rounded-xl border border-border hover:border-primary/50 transition-all overflow-hidden flex flex-col group cursor-pointer"
+            >
               <div className="relative h-48 w-full overflow-hidden bg-secondary">
                 {product.image ? (
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -108,7 +114,10 @@ export default function ShopPage() {
                 <p className="text-foreground/60 text-sm flex-1">{product.description}</p>
                 
                 <button 
-                  onClick={() => handleAdd(product)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdd(product);
+                  }}
                   className="mt-6 w-full flex items-center justify-center gap-2 bg-secondary border border-border hover:border-primary text-white py-2 rounded-lg font-medium transition-colors hover:text-primary group-hover:bg-primary/10"
                 >
                   <Plus size={16} /> Aggiungi
@@ -117,6 +126,14 @@ export default function ShopPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedProduct && (
+        <ProductModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+          onAddToCart={handleAdd}
+        />
       )}
     </div>
   );

@@ -16,9 +16,15 @@ export default function CalendarPage() {
 
   const cuts = products.filter(p => p.type === "cut");
 
-  const availableSlots = slots.filter(s => s.isAvailable).sort((a, b) => {
-    return new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime();
-  });
+  const now = new Date();
+  const availableSlots = slots
+    .filter(s => {
+      const slotDateTime = new Date(`${s.date}T${s.time}`);
+      return s.isAvailable && slotDateTime > now;
+    })
+    .sort((a, b) => {
+      return new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime();
+    });
 
   const filteredSlots = selectedDate 
     ? availableSlots.filter(s => s.date === selectedDate)

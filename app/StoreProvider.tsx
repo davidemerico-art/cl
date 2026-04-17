@@ -24,6 +24,7 @@ export type CalendarSlot = {
   date: string;
   time: string;
   isAvailable: boolean;
+  blockedName?: string | null;
 };
 
 type StoreContextType = {
@@ -43,7 +44,7 @@ type StoreContextType = {
 
   slots: CalendarSlot[];
   addSlot: (date: string, time: string) => void;
-  toggleSlotAvailability: (id: string) => void;
+  toggleSlotAvailability: (id: string, name?: string | null) => void;
   deleteSlot: (id: string) => void;
 };
 
@@ -185,13 +186,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const toggleSlotAvailability = async (id: string) => {
+  const toggleSlotAvailability = async (id: string, name: string | null = null) => {
     try {
       await fetch("/api/slots", {
         method: "PATCH",
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id, blockedName: name })
       });
-      setSlots(prev => prev.map(s => s.id === id ? { ...s, isAvailable: !s.isAvailable } : s));
+      setSlots(prev => prev.map(s => {
+        if (s.id === id) {
+          // Se name è null, stiamo sbloccando -> isAvailable = true
+          // Se name ha valore, stiamo bloccando -> isAvailable = false
+          const isAvailable = name === null ? true : false;
+          return { ...s, isAvailable, blockedName: name };
+        }
+        return s;
+      }));
     } catch (err) {
       console.error("Errore toggle slot:", err);
     }

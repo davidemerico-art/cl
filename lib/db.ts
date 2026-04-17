@@ -27,7 +27,8 @@ export async function initDb() {
         id TEXT PRIMARY KEY,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
-        is_available BOOLEAN DEFAULT TRUE
+        is_available BOOLEAN DEFAULT TRUE,
+        blocked_name TEXT
       );
     `);
 

@@ -3,7 +3,7 @@
 import { useStore, Product, CalendarSlot } from "@/app/StoreProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store, Settings, Search, X } from "lucide-react";
+import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store, Settings, Search, X, User } from "lucide-react";
 
 export default function AdminDashboard() {
   const { isAdmin, logoutAdmin, products, addProduct, deleteProduct, slots, addSlot, toggleSlotAvailability, deleteSlot, updateAdminCodes } = useStore();
@@ -213,10 +213,14 @@ function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product
   );
 }
 
-// Composant per gestire il calendario
+// Componente per gestire il calendario
 function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: CalendarSlot[], onAdd: any, onToggle: any, onDelete: any }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  
+  // Stati per il modal di blocco
+  const [blockingSlot, setBlockingSlot] = useState<CalendarSlot | null>(null);
+  const [clientName, setClientName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,10 +228,26 @@ function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: Calendar
     setTime(""); // keep the date to easily add multiple slots
   };
 
-  const sortedSlots = [...slots].sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
+  const handleConfirmBlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (blockingSlot && clientName.trim()) {
+      onToggle(blockingSlot.id, clientName.trim());
+      setBlockingSlot(null);
+      setClientName("");
+    }
+  };
+
+  const now = new Date();
+  const sortedSlots = [...slots]
+    .filter(s => {
+      // Filtriamo gli slot passati
+      const slotDateTime = new Date(`${s.date}T${s.time}`);
+      return slotDateTime > now;
+    })
+    .sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
       <div className="lg:col-span-1 bg-background p-6 rounded-xl border border-border h-fit">
         <h3 className="font-bold text-xl mb-4 text-white">Nuova Disponibilità</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -246,23 +266,43 @@ function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: Calendar
       </div>
 
       <div className="lg:col-span-2">
-        <h3 className="font-bold text-xl mb-4 text-white">Slot Caricati</h3>
+        <h3 className="font-bold text-xl mb-4 text-white">Slot Futuri Caricati</h3>
         {sortedSlots.length === 0 ? (
-           <div className="text-center p-10 bg-background rounded-xl border border-border text-foreground/50">Nessun orario presente.</div>
+           <div className="text-center p-10 bg-background rounded-xl border border-border text-foreground/50">Nessun orario futuro presente.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sortedSlots.map(slot => (
-              <div key={slot.id} className={`border rounded-lg p-4 flex justify-between items-center transition-colors ${slot.isAvailable ? 'bg-background border-primary/30' : 'bg-red-950/20 border-red-900/30'}`}>
-                <div>
-                  <div className="font-bold text-white text-lg">{new Date(slot.date).toLocaleDateString('it-IT')}</div>
-                  <div className="font-mono text-primary">{slot.time} - {slot.isAvailable ? 'Libero' : 'Occupato'}</div>
+              <div key={slot.id} className={`border rounded-lg p-4 flex justify-between items-center transition-all ${slot.isAvailable ? 'bg-background border-primary/30' : 'bg-red-950/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}>
+                <div className="flex-1">
+                  <div className="font-bold text-white text-lg">{new Date(slot.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-primary font-bold">{slot.time}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${slot.isAvailable ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                      {slot.isAvailable ? 'Libero' : 'Occupato'}
+                    </span>
+                  </div>
+                  {!slot.isAvailable && slot.blockedName && (
+                    <div className="mt-2 flex items-center gap-2 text-red-400 bg-red-500/5 p-2 rounded-md border border-red-500/10 text-sm">
+                      <User size={14} />
+                      <span className="font-medium">Cliente: <span className="font-bold">{slot.blockedName}</span></span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => onToggle(slot.id)} className="px-3 py-2 bg-secondary rounded text-sm hover:text-white" title="Cambia Stato">
+                <div className="flex flex-col gap-2 ml-4">
+                  <button 
+                    onClick={() => {
+                      if (slot.isAvailable) {
+                        setBlockingSlot(slot);
+                      } else {
+                        onToggle(slot.id, null); // Unblock
+                      }
+                    }} 
+                    className={`px-3 py-2 rounded text-xs font-bold transition-colors ${slot.isAvailable ? 'bg-primary text-background hover:opacity-90' : 'bg-secondary text-white hover:bg-white/10'}`}
+                  >
                     {slot.isAvailable ? 'Blocca' : 'Sblocca'}
                   </button>
-                  <button onClick={() => onDelete(slot.id)} className="px-3 py-2 bg-red-500/10 text-red-500 rounded text-sm hover:bg-red-500/20" title="Elimina">
-                    <Trash2 size={16} />
+                  <button onClick={() => onDelete(slot.id)} className="px-3 py-2 bg-red-500/10 text-red-500 rounded text-xs hover:bg-red-500/20 flex items-center justify-center gap-1" title="Elimina">
+                    <Trash2 size={14} /> Elimina
                   </button>
                 </div>
               </div>
@@ -270,6 +310,51 @@ function CalendarManager({ slots, onAdd, onToggle, onDelete }: { slots: Calendar
           </div>
         )}
       </div>
+
+      {/* Modal per inserimento Nome Cliente */}
+      {blockingSlot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border p-8 shadow-2xl scale-in-center overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+            <button onClick={() => setBlockingSlot(null)} className="absolute top-4 right-4 text-foreground/40 hover:text-white transition-colors">
+              <X size={20} />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                <User size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Blocca Orario</h3>
+                <p className="text-foreground/60 text-sm">
+                  {new Date(blockingSlot.date).toLocaleDateString('it-IT')} alle ore {blockingSlot.time}
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleConfirmBlock} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground/70 mb-2">Nome del Cliente</label>
+                <input 
+                  autoFocus
+                  required 
+                  type="text" 
+                  value={clientName} 
+                  onChange={e=>setClientName(e.target.value)} 
+                  placeholder="Inserisci nome e cognome..."
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-all text-lg" 
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setBlockingSlot(null)} className="flex-1 bg-secondary text-white font-bold px-4 py-3 rounded-xl hover:bg-white/10 transition-colors">
+                  Annulla
+                </button>
+                <button type="submit" className="flex-1 bg-primary text-background font-bold px-4 py-3 rounded-xl hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
+                  Conferma Blocco
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useStore } from "./StoreProvider";
+import { useStore, Product } from "./StoreProvider";
 import { Scissors, ShoppingBag, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import ProductModal from "@/app/components/ProductModal";
 
 export default function Home() {
-  const { products } = useStore();
+  const { products, addToCart } = useStore();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   // Filtriamo solo i tagli ("cut") per la Home
   const cuts = products.filter(p => p.type === "cut").slice(0, 3); // Mostriamo max 3 in home
@@ -74,7 +77,11 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {cuts.map(cut => (
-              <div key={cut.id} className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/50 transition-colors">
+              <div 
+                key={cut.id} 
+                onClick={() => setSelectedProduct(cut)}
+                className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/50 transition-colors cursor-pointer"
+              >
                 <div className="relative h-64 w-full overflow-hidden">
                   <img 
                     src={cut.image} 
@@ -89,9 +96,9 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold mb-2 text-white">{cut.name}</h3>
                   <p className="text-foreground/70 text-sm line-clamp-2">{cut.description}</p>
-                  <Link href={`/shop`} className="mt-4 inline-flex text-primary text-sm font-semibold hover:underline">
-                    Richiedi questo stile
-                  </Link>
+                  <button className="mt-4 inline-flex text-primary text-sm font-semibold hover:underline">
+                    Dettagli stile
+                  </button>
                 </div>
               </div>
             ))}
@@ -99,6 +106,13 @@ export default function Home() {
         )}
       </section>
 
+      {selectedProduct && (
+        <ProductModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+          onAddToCart={addToCart}
+        />
+      )}
     </div>
   );
 }
