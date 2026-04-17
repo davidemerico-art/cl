@@ -3,7 +3,7 @@
 import { useStore, Product, CalendarSlot } from "@/app/StoreProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store, Settings } from "lucide-react";
+import { LogOut, Plus, Trash2, Calendar as CalIcon, Scissors, Store, Settings, Search, X } from "lucide-react";
 
 export default function AdminDashboard() {
   const { isAdmin, logoutAdmin, products, addProduct, deleteProduct, slots, addSlot, toggleSlotAvailability, deleteSlot, updateAdminCodes } = useStore();
@@ -61,7 +61,14 @@ export default function AdminDashboard() {
 // Composant per gestire i prodotti/tagli
 // Componente per gestire i prodotti/tagli
 function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product", items: Product[], onAdd: any, onDelete: any }) {
-  const filtered = items.filter(i => i.type === type);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const filtered = items.filter(i => {
+    const matchesType = i.type === type;
+    const matchesSearch = i.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         i.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
@@ -154,9 +161,33 @@ function ProductManager({ type, items, onAdd, onDelete }: { type: "cut"|"product
       </div>
 
       <div className="lg:col-span-2">
-        <h3 className="font-bold text-xl mb-4 text-white">Elementi Correnti</h3>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <h3 className="font-bold text-xl text-white">Elementi Correnti</h3>
+          
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
+            <input 
+              type="text"
+              placeholder="Cerca..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg pl-9 pr-8 py-2 text-white focus:outline-none focus:border-primary transition-colors text-xs"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {filtered.length === 0 ? (
-          <div className="text-center p-10 bg-background rounded-xl border border-border text-foreground/50">Nessun elemento presente.</div>
+          <div className="text-center p-10 bg-background rounded-xl border border-border text-foreground/50">
+            {searchQuery ? `Nessun risultato per "${searchQuery}"` : "Nessun elemento presente."}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map(item => (

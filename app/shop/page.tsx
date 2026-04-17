@@ -1,14 +1,22 @@
 "use client";
 
 import { useStore, Product } from "@/app/StoreProvider";
-import { ShoppingCart, Plus } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Plus, Search, X } from "lucide-react";
+import { useState, useMemo } from "react";
 
 export default function ShopPage() {
   const { products, addToCart } = useStore();
   const [filter, setFilter] = useState<"all" | "product" | "cut">("all");
-
-  const filteredProducts = products.filter(p => filter === "all" || p.type === filter);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchesType = filter === "all" || p.type === filter;
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           p.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesType && matchesSearch;
+    });
+  }, [products, filter, searchQuery]);
 
   const handleAdd = (product: Product) => {
     addToCart(product);
@@ -22,27 +30,56 @@ export default function ShopPage() {
           <p className="text-foreground/70">Esplora i nostri stili o acquista i prodotti usati in salone.</p>
         </div>
         
-        <div className="flex bg-secondary p-1 rounded-lg mt-6 md:mt-0">
-          <button 
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "all" ? "bg-primary text-background" : "hover:text-primary"}`}
-          >
-            Tutto
-          </button>
-          <button 
-            onClick={() => setFilter("cut")}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "cut" ? "bg-primary text-background" : "hover:text-primary"}`}
-          >
-            Tagli
-          </button>
-          <button 
-            onClick={() => setFilter("product")}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "product" ? "bg-primary text-background" : "hover:text-primary"}`}
-          >
-            Prodotti
-          </button>
+        <div className="flex flex-col sm:flex-row gap-4 mt-6 md:mt-0 w-full md:w-auto">
+          <div className="relative flex-1 sm:min-w-[250px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
+            <input 
+              type="text"
+              placeholder="Cerca prodotti o tagli..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-secondary border border-border rounded-lg pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-primary transition-colors text-sm"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex bg-secondary p-1 rounded-lg">
+            <button 
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "all" ? "bg-primary text-background" : "hover:text-primary"}`}
+            >
+              Tutto
+            </button>
+            <button 
+              onClick={() => setFilter("cut")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "cut" ? "bg-primary text-background" : "hover:text-primary"}`}
+            >
+              Tagli
+            </button>
+            <button 
+              onClick={() => setFilter("product")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filter === "product" ? "bg-primary text-background" : "hover:text-primary"}`}
+            >
+              Prodotti
+            </button>
+          </div>
         </div>
       </div>
+
+      {searchQuery && (
+        <div className="mb-8 flex items-center gap-2 text-foreground/60">
+          <span>Risultati per:</span>
+          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">"{searchQuery}"</span>
+          <button onClick={() => setSearchQuery("")} className="text-xs hover:underline ml-2">Cancella</button>
+        </div>
+      )}
 
       {filteredProducts.length === 0 ? (
         <div className="text-center py-20 bg-card rounded-2xl border border-border">
