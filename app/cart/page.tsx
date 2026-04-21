@@ -1,12 +1,12 @@
 "use client";
 
 import { useStore } from "@/app/StoreProvider";
-import { Trash2, MessageCircle, AlertCircle, CalendarClock } from "lucide-react";
+import { Trash2, MessageCircle, AlertCircle, CalendarClock, Plus, Minus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function CartPage() {
-  const { cart, removeFromCart, clearCart, slots } = useStore();
+  const { cart, removeFromCart, updateCartQuantity, clearCart, slots } = useStore();
   const [mounted, setMounted] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<string>("");
   
@@ -16,7 +16,11 @@ export default function CartPage() {
 
   const total = cart.reduce((acc, item) => acc + ((item.price ?? 0) * item.quantity), 0);
   const hasCut = cart.some(item => item.type === "cut");
-  const availableSlots = slots.filter(s => s.isAvailable).sort((a, b) => {
+  const now = new Date();
+  const availableSlots = slots.filter(s => {
+    const slotDateTime = new Date(`${s.date}T${s.time}`);
+    return s.isAvailable && slotDateTime > now;
+  }).sort((a, b) => {
     return new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime();
   });
   
@@ -41,6 +45,7 @@ export default function CartPage() {
     
     const encodedText = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send/?phone=393249070366&text=${encodedText}`, "_blank");
+    clearCart();
   };
 
   if (!mounted) return null;
@@ -73,7 +78,28 @@ export default function CartPage() {
                         <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">SERVIZIO</span>
                       )}
                     </div>
-                    <span className="text-sm text-foreground/60 capitalize mt-1">Quantità: {item.quantity}</span>
+                    {item.type === "product" ? (
+                      <div className="flex items-center gap-3 mt-3">
+                        <button 
+                          onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground/60 hover:text-primary hover:border-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                          title="Diminuisci quantità"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-6 text-center font-bold text-white">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                          className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground/60 hover:text-primary hover:border-primary transition-all"
+                          title="Aumenta quantità"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-foreground/60 capitalize mt-1">Quantità: {item.quantity}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-6">
                     <span className="font-bold text-primary">€{((item.price ?? 0) * item.quantity).toFixed(2)}</span>

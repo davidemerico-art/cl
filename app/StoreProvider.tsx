@@ -31,6 +31,7 @@ type StoreContextType = {
   cart: CartItem[];
   addToCart: (item: Product) => void;
   removeFromCart: (id: string) => void;
+  updateCartQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   
   isAdmin: boolean;
@@ -146,6 +147,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
+  
+  const updateCartQuantity = (id: string, quantity: number) => {
+    if (quantity < 1) return;
+    setCart(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
+  };
+
   const clearCart = () => setCart([]);
 
   const addProduct = async (productData: Omit<Product, "id">) => {
@@ -220,7 +227,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      cart, addToCart, removeFromCart, clearCart,
+      cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
       isAdmin, loginAdmin, logoutAdmin, updateAdminCodes,
       products, addProduct, deleteProduct,
       slots, addSlot, toggleSlotAvailability, deleteSlot
